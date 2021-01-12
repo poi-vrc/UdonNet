@@ -26,8 +26,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
     public const byte PacketNegAck = 0x40;
     //0x80 reserved
 
-    [Header("Connect this UNPlayer to the UdonNetController of the scene")]
-    public UdonNetController udonNetController;
+    private UdonNetController udonNetController;
 
     [UdonSynced] private string data;
     private string lastData;
@@ -36,7 +35,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     void Start()
     {
-
+        udonNetController = (UdonNetController) transform.parent.GetComponent(typeof(UdonBehaviour));
     }
 
     public bool SendRawDataToPlayer(int targetPlayerId, string stringData)
@@ -65,25 +64,22 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
     /// <returns>It returns whether this data is permitted to send, that the caller is the GameObject owner and the string data does not exceed the limit.</returns>
     public bool SendPacket(byte packetType, int targetPlayerId, string stringData)
     {
-        Debug.Log(string.Format("attempting to send data to player {0} and string data {1}", targetPlayerId, stringData));
+        Debug.Log(string.Format("[UdonNet] Attempting to send packet type {0} to player {1} and string data {2}", packetType, targetPlayerId, stringData));
         if (!Networking.IsOwner(gameObject))
         {
-            Debug.Log("not owner in networking. aborting");
             return false;
         }
-
-        Debug.Log("encoding data...");
+        
         string encoded = Encode(
             eventId++,
             packetType,
             targetPlayerId,
             stringData
             );
-        Debug.Log(string.Format("encoded data: {0}", encoded));
+        Debug.Log(string.Format("[UdonNet] Encoded packet data: {0}", encoded));
 
         if (encoded == null)
         {
-            Debug.Log("encoded is null. aborting");
             return false;
         }
 
@@ -91,11 +87,6 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
         data = encoded;
 
         return true;
-    }
-
-    public void Ping()
-    {
-
     }
 
     //
@@ -109,15 +100,23 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             Time.timeSinceLevelLoad > 10 &&
             !string.IsNullOrEmpty(data))
         {
-            Debug.Log(string.Format("New deserialized data received: {0}", data));
+            Debug.Log(string.Format("[UdonNet] New deserialized data received: {0}", data));
             lastData = data;
             if (udonNetController == null)
             {
-                Debug.Log("No UdonNetController is connected to handle received data!");
+                Debug.LogError("[UdonNet] No UdonNetController is connected to handle received data!");
                 return;
             }
 
-            udonNetController.Handle(Networking.GetOwner(gameObject), Decode(data));
+            VRCPlayerApi player = Networking.GetOwner(gameObject);
+            if (player == null)
+            {
+                Debug.Log("[UdonNet] deser player is null");
+            } else
+            {
+                Debug.Log(string.Format("[UdonNet] deser player is not null ({0} ({1}))", player.displayName, player.playerId));
+            }
+            udonNetController.Handle(player, Decode(data));
         }
     }
 
@@ -137,13 +136,12 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             return null;
         }
 
-        Debug.Log("preparing array");
+        Debug.Log("[UdonNet] making frame with size " + udonNetController.networkFrameSize.ToString());
         byte[] arr = new byte[udonNetController.networkFrameSize];
         int offset = 0;
 
-        Debug.Log(string.Format("eventId {0}", eventId));
+        Debug.Log("[UdonNet] adding eventid");
         byte[] eventIdArr = Uint32ToBytes(eventId);
-        Debug.Log(string.Format("offset {0} arrLen/len {1}/{2}", offset, eventIdArr.Length, arr.Length));
         for (int i = 0; i < eventIdArr.Length; i++)
         {
             arr[offset + i] = eventIdArr[i];
@@ -151,12 +149,12 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
         offset += eventIdArr.Length;
 
         arr[offset++] = packetType;
-        
+
+        Debug.Log("[UdonNet] checking targetedplayer");
         if ((packetType & PacketTargetedPlayer) != 0)
         {
-            Debug.Log(string.Format("targetplayer {0}", targetPlayerId));
+            Debug.Log("[UdonNet] adding targetplayer into bytearr");
             byte[] targetPlayerArr = Int32ToBytes(targetPlayerId);
-            Debug.Log(string.Format("offset {0} arrLen/len {1}/{2}", offset, targetPlayerArr.Length, arr.Length));
             for (int i = 0; i < targetPlayerArr.Length; i++)
             {
                 arr[offset + i] = targetPlayerArr[i];
@@ -166,24 +164,23 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
         //arr[offset++] = dataType;
 
-        Debug.Log(string.Format("stringdata {0}", stringData));
+        Debug.Log("[UdonNet] converting string arr into bytearr");
         byte[] stringDataArr = StringToBytes(stringData);
-        Debug.Log(string.Format("offset {0} arrLen/len {1}/{2}", offset, stringDataArr.Length, arr.Length));
+        Debug.LogError(string.Format("[UdonNet] offset {0} strarrlen {1}", offset, stringDataArr.Length));
 
         if (offset + stringDataArr.Length > udonNetController.networkFrameSize)
         {
-            Debug.Log(string.Format("Cannot encode UdonNetData because string data is too long (>{0} bytes): {1}", udonNetController.networkFrameSize, stringDataArr.Length));
+            Debug.LogError(string.Format("[UdonNet] Cannot encode UdonNetData because string data is too long (>{0} bytes): {1}", udonNetController.networkFrameSize, stringDataArr.Length));
             return null;
         }
 
-        Debug.Log("stringdataarr");
+        Debug.Log("[UdonNet] putting stringbyte arr into arr");
         for (int i = 0; i < stringDataArr.Length; i++)
         {
             arr[offset + i] = stringDataArr[i];
         }
         offset += stringDataArr.Length;
-
-        Debug.Log("converting into b64");
+        
         return Convert.ToBase64String(arr);
     }
 
@@ -194,8 +191,6 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
     /// <returns> decoded UdonNetData</returns>
     public object[] Decode(string rawData)
     {
-        Debug.Log(string.Format("decoding data: {0}", rawData));
-
         byte[] arr = Convert.FromBase64String(rawData);
 
         object[] udonNetData = new object[4];
@@ -218,8 +213,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
         }
 
         udonNetData[3] = BytesToString(arr, offset);
-
-        Debug.Log(string.Format("returning data: {0},{1},{2},{3}", udonNetData[0], udonNetData[1], udonNetData[2], udonNetData[3]));
+        
         return udonNetData;
     }
 
