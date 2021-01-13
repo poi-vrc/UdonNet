@@ -14,20 +14,39 @@ public class UdonNetController : UdonSharpBehaviour
     [Header("Network Frame Size (Default 37 bytes, too large will block the network)")]
     public int networkFrameSize = 37;
 
+    [Header("Time to cooldown before sending the next packet  (in ms)")]
+    public int packetCooldownTime = 1000;
+
+    [Header("Packet queue maximum length while cooling down")]
+    public int packetQueueLength = 100;
+
+    [Header("Wait acknowledgement list maximum length")]
+    public int waitAckLength = 200;
+
+    [Header("Wait timeout for acknowledgment (in ms)")]
+    public int waitAckTimeout = 10000;
+
+    [Header("Maximum retries for packet send")]
+    public int waitAckMaxRetries = 5;
+
+    #region protocol_spec
     //
-    // Protocol (Udon does not support reading constants from other classes, this is a copy from NetworkedUNPlayer)
+    // Protocol
     //
 
-    public const int ProtocolVersion = 1;
-    public const int CompatProtocolVersion = 1;
+    public int ProtocolVersion = 1;
+    public int CompatProtocolVersion = 1;
 
-    public const byte PacketLossless = 0x01;
-    public const byte PacketTargetedPlayer = 0x02;
-    //0x04, 0x08 reserved
-    public const byte PacketEnquiry = 0x10;
-    public const byte PacketAck = 0x20;
-    public const byte PacketNegAck = 0x40;
-    //0x80 reserved
+    public byte PacketLossless = 1; //0x01;
+    public byte PacketTargetedPlayer = 2; //0x02;
+    public byte PacketSegmentedPacket = 4; //0x04;
+    public byte PacketDataTypeString = 8; //0x08;
+
+    public byte PacketEnquiry = 16; //0x10;
+    public byte PacketAcknowledgement = 32; //0x20;
+    public byte PacketSynchronizeSequenceNumber = 64; //0x40;
+    public byte PacketFinish = 128; //0x80;
+    #endregion
 
     void Start()
     {
@@ -41,47 +60,48 @@ public class UdonNetController : UdonSharpBehaviour
 
     public void Handle(VRCPlayerApi player, object[] udonNetData)
     {
-        if (player == null)
-        {
-            Debug.Log("[UdonNet] handle player is null");
-        }
-        else
-        {
-            Debug.Log(string.Format("[UdonNet] handle player is not null ({0} ({1}))", player.displayName, player.playerId));
-        }
         //TODO: UdonSharp does not support custom classes currently, so the data is packed in object[]
         uint eventId = (uint) udonNetData[0];
         byte packetType = (byte) udonNetData[1];
         int targetPlayer = (int) udonNetData[2];
-        string stringData = (string) udonNetData[3];
+        byte[] buffer = (byte[]) udonNetData[3];
 
         NetworkedUNPlayer self = GetLocalUNPlayer();
         if ((packetType & PacketEnquiry) != 0)
         {
             Debug.Log(string.Format("[UdonNet] Protocol enquiry received from player {0} ({1}), sending version {2}", player.displayName, player.playerId, ProtocolVersion));
-            self.SendRawDataToPlayer(player.playerId, ProtocolVersion.ToString());
+            self.SendVersion(player.playerId);
+        } else if ((packetType & PacketAcknowledgement) != 0) {
+            uint targetEventId = self.BytesToUint32(buffer, 0);
+            Debug.Log(string.Format("[UdonNet] Acknowledgement received from player {0} ({1}), clearing wait ack for event ID {2}", player.displayName, player.playerId, targetEventId));
+            bool suc = self.ClearWaitAck(targetEventId);
+            if (!suc)
+            {
+                Debug.Log("[UdonNet] Clear wait ack not successful. Such event ID does not exist in wait ack list.");
+            }
         } else
         {
-            Debug.Log("[UdonNet] sending to event listeners");
             if (eventListeners != null)
             {
-                Debug.Log(string.Format("[UdonNet] el len {0}", eventListeners.Length));
                 for (int i = 0; i < eventListeners.Length; i++)
                 {
-                    Debug.Log(string.Format("[UdonNet] checking index {0} result {1} for null", i, eventListeners[i] == null));
                     if (eventListeners[i] != null) //TODO: check instance type
                     {
                         Component[] insts = eventListeners[i].GetComponents(typeof(UdonBehaviour));
-                        Debug.Log(string.Format("[UdonNet] get components len {0}", insts.Length));
                         for (int j = 0; j < insts.Length; j++)
                         {
-                            Debug.Log(string.Format("[UdonNet] typeof index {0} = {1}", j, insts[j].GetType()));
                             UdonBehaviour inst = (UdonBehaviour) insts[j];
                             
                             inst.SetProgramVariable("_udonNetReceivedData", udonNetData);
                             inst.SetProgramVariable("_udonNetFromPlayer", player);
                             inst.SetProgramVariable("_udonNetTargetedPlayer", targetPlayer);
-                            inst.SetProgramVariable("_udonNetStringData", stringData);
+                            
+                            if ((packetType & PacketDataTypeString) != 0)
+                            {
+                                string stringData = self.BytesToString(buffer, 0);
+                                inst.SetProgramVariable("_udonNetStringData", stringData);
+                            }
+
                             if ((packetType & PacketTargetedPlayer) != 0)
                             {
                                 inst.SendCustomEvent("OnUdonNetPlayerEvent");
@@ -94,6 +114,11 @@ public class UdonNetController : UdonSharpBehaviour
                         }
                     }
                 }
+            }
+
+            if ((packetType & PacketLossless) != 0)
+            {
+                self.SendAck(player.playerId, eventId);
             }
         }
     }

@@ -13,6 +13,9 @@ public class ExampleBroadcastCubeScript : UdonSharpBehaviour
     [Header("Just some random string to send to the network")]
     public string customStringToSend;
 
+    [Header("Request for an acknowledgement from receivers")]
+    public bool losslessMode = false;
+
     void Start()
     {
 
@@ -21,6 +24,12 @@ public class ExampleBroadcastCubeScript : UdonSharpBehaviour
     public override void Interact()
     {
         NetworkedUNPlayer unp = udonNet.GetLocalUNPlayer();
-        unp.BroadcastRawData(customStringToSend + " at time " + Time.realtimeSinceStartup);
+        if (losslessMode)
+        {
+            unp.BroadcastStringLossless("Lossless " + customStringToSend + " at time " + Time.realtimeSinceStartup);
+        } else
+        {
+            unp.BroadcastString(customStringToSend + " at time " + Time.realtimeSinceStartup);
+        }
     }
 }
