@@ -112,7 +112,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool SendStringToPlayer(int targetPlayerId, string stringData)
     {
-        byte[] buffer = StringToBytes(stringData);
+        byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             udonNetController.PacketDataTypeString,
             targetPlayerId,
@@ -123,7 +123,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
     
     public bool SendStringToPlayerLossless(int targetPlayerId, string stringData)
     {
-        byte[] buffer = StringToBytes(stringData);
+        byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             (byte) (udonNetController.PacketLossless | udonNetController.PacketDataTypeString),
             targetPlayerId,
@@ -144,7 +144,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool BroadcastString(string stringData)
     {
-        byte[] buffer = StringToBytes(stringData);
+        byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             udonNetController.PacketDataTypeString,
             0,
@@ -155,7 +155,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool BroadcastStringLossless(string stringData)
     {
-        byte[] buffer = StringToBytes(stringData);
+        byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             (byte)(udonNetController.PacketLossless | udonNetController.PacketDataTypeString),
             0,
@@ -166,7 +166,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool SendAck(int targetPlayerId, uint eventId)
     {
-        byte[] buffer = Uint32ToBytes(eventId);
+        byte[] buffer = udonNetController.Uint32ToBytes(eventId);
         return SendPacket(
             (byte)(
                 udonNetController.PacketTargetedPlayer |
@@ -241,7 +241,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool SendVersion(int targetPlayerId)
     {
-        byte[] buffer = Int32ToBytes(udonNetController.ProtocolVersion);
+        byte[] buffer = udonNetController.Int32ToBytes(udonNetController.ProtocolVersion);
         return SendRawToPlayer(targetPlayerId, buffer, buffer.Length);
     }
 
@@ -258,7 +258,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
         Debug.Log(string.Format("[UdonNet] Attempting to send packet type {0} to player {1} with buffer length {2}", packetFlags, targetPlayerId, bufferLen));
 
         uint newEventId = eventId++;
-        string encoded = Encode(
+        string encoded = udonNetController.Encode(
             newEventId,
             packetFlags,
             targetPlayerId,
@@ -298,262 +298,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             }
 
             VRCPlayerApi player = Networking.GetOwner(gameObject);
-            udonNetController.Handle(player, Decode(data));
+            udonNetController.Handle(player, udonNetController.Decode(data));
         }
-    }
-
-    //
-    // Data encoding
-    //
-
-    public int CalculateSegmentsCount(byte packetFlags, int bufferLen)
-    {
-        int headerLen = 8; //eventId (uint) + packetFlags (byte) + segmentNumber (byte) + segmentLength (ushort)
-        if ((packetFlags & udonNetController.PacketTargetedPlayer) != 0)
-        {
-           headerLen += 4; //targetPlayer (int)
-        }
-        int availableSize = udonNetController.networkFrameSize - headerLen;
-        return (int) Mathf.Ceil(bufferLen / availableSize);
-    }
-
-    //TODO: Improve the payload encoding
-    /// <summary>
-    /// Encodes specified data into a synchronizable Base64 string
-    /// </summary>
-    /// <returns>Base64 string</returns>
-    public string Encode(uint eventId, byte packetFlags, int targetPlayerId, byte[] buffer, int bufferLen, byte segmentIndex)
-    {
-        if (udonNetController == null)
-        {
-            return null;
-        }
-        
-        byte[] arr = new byte[udonNetController.networkFrameSize];
-        int offset = 0;
-        
-        byte[] eventIdArr = Uint32ToBytes(eventId);
-        for (int i = 0; i < eventIdArr.Length; i++)
-        {
-            arr[offset + i] = eventIdArr[i];
-        }
-        offset += eventIdArr.Length;
-
-        arr[offset++] = packetFlags;
-        
-        if ((packetFlags & udonNetController.PacketTargetedPlayer) != 0)
-        {
-            byte[] targetPlayerArr = Int32ToBytes(targetPlayerId);
-            for (int i = 0; i < targetPlayerArr.Length; i++)
-            {
-                arr[offset + i] = targetPlayerArr[i];
-            }
-            offset += targetPlayerArr.Length;
-        }
-        
-        int availableSize = udonNetController.networkFrameSize - offset;
-
-        if ((packetFlags & udonNetController.PacketSegmentedPacket) != 0)
-        {
-            int count = CalculateSegmentsCount(packetFlags, bufferLen);
-
-            if (segmentIndex < 0 || segmentIndex >= count)
-            {
-                Debug.LogError(string.Format("[UdonNet] Cannot encode UdonNetData because wrong segment index is provided: {0}/{1}", segmentIndex, count));
-                return null;
-            }
-
-            if (segmentIndex == 0)
-            {
-                arr[5] |= udonNetController.PacketSynchronizeSequenceNumber;
-            }
-
-            arr[offset++] = segmentIndex;
-
-            int segmentMaxSize = availableSize - 1;
-            int bufferOffset = segmentMaxSize * segmentIndex;
-            int remain = bufferLen - bufferOffset;
-            ushort segmentLen = remain > segmentMaxSize ? (ushort)segmentMaxSize : (ushort)remain;
-
-            byte[] segmentLenArr = UshortToBytes(segmentLen);
-            arr[offset++] = segmentLenArr[0];
-            arr[offset++] = segmentLenArr[1];
-
-            for (int i = bufferOffset; i < segmentLen; i++)
-            {
-                arr[offset + i] = buffer[i];
-            }
-
-            if (remain == 0)
-            {
-                arr[5] |= udonNetController.PacketFinish;
-            }
-        } else {
-            if (availableSize < bufferLen)
-            {
-                Debug.LogError(string.Format("[UdonNet] Cannot encode UdonNetData because byte buffer length is too long (>{0} bytes): {1}/{2}", udonNetController.networkFrameSize, bufferLen, availableSize));
-                return null;
-            }
-
-            byte[] bufferLenArr = UshortToBytes((ushort) bufferLen);
-            arr[offset++] = bufferLenArr[0];
-            arr[offset++] = bufferLenArr[1];
-
-            for (int i = 0; i < bufferLen; i++)
-            {
-                arr[offset + i] = buffer[i];
-            }
-        }
-        
-        
-        return Convert.ToBase64String(arr);
-    }
-
-    /// <summary>
-    /// Decodes the specified Base64 string to UdonNetData
-    /// </summary>
-    /// <param name="rawData">Raw Base64 data string</param>
-    /// <returns> decoded UdonNetData</returns>
-    public object[] Decode(string rawData)
-    {
-        byte[] arr = Convert.FromBase64String(rawData);
-
-        object[] udonNetData = new object[4];
-
-        int offset = 0;
-
-        udonNetData[0] = BytesToUint32(arr, offset);
-        offset += 4;
-
-        udonNetData[1] = arr[offset];
-        offset += 1;
-
-        if ((arr[4] & udonNetController.PacketTargetedPlayer) != 0)
-        {
-            udonNetData[2] = BytesToInt32(arr, offset);
-            offset += 4;
-        } else
-        {
-            udonNetData[2] = null;
-        }
-
-        ushort bufferLen = BytesToUshort(arr, offset);
-        offset += 2;
-
-        byte[] buffer = new byte[bufferLen];
-        for (int i = 0; i < bufferLen; i++)
-        {
-            buffer[i] = arr[offset + i];
-        }
-        udonNetData[3] = buffer;
-        
-        return udonNetData;
-    }
-
-    //
-    // Byte operations
-    //
-
-    public byte[] UshortToBytes(ushort x)
-    {
-        ushort bits = 8;
-        byte[] output = new byte[2];
-        output[0] = (byte) (x >> bits);
-        output[1] = (byte) x;
-        return output;
-    }
-
-    public byte[] ShortToBytes(short x)
-    {
-        short bits = 8;
-        byte[] output = new byte[2];
-        output[0] = (byte) (x >> bits);
-        output[1] = (byte) x;
-        return output;
-    }
-
-    public byte[] Uint32ToBytes(uint x)
-    {
-        byte[] output = new byte[4];
-        output[0] = (byte)(x >> 24);
-        output[1] = (byte)(x >> 16);
-        output[2] = (byte)(x >> 8);
-        output[3] = (byte)x;
-        return output;
-    }
-
-    public byte[] Int32ToBytes(int x)
-    {
-        byte[] output = new byte[4];
-        output[0] = (byte)(x >> 24);
-        output[1] = (byte)(x >> 16);
-        output[2] = (byte)(x >> 8);
-        output[3] = (byte)x;
-        return output;
-    }
-
-    public byte[] StringToBytes(string str)
-    {
-        //This only encodes ASCII
-        char[] arr = str.ToCharArray();
-        byte[] output = new byte[arr.Length];
-        for (int i = 0; i < arr.Length; i++)
-        {
-            output[i] = Convert.ToByte(arr[i]);
-        }
-        return output;
-    }
-
-    public ushort BytesToUshort(byte[] bytes, int offset)
-    {
-        ushort output = 0;
-        output |= (ushort) (bytes[offset] << 8);
-        output |= bytes[offset + 1];
-        return output;
-    }
-
-    public short BytesToShort(byte[] bytes, int offset)
-    {
-        short output = 0;
-        output |= (short) (bytes[offset] << 8);
-#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-        output |= bytes[offset + 1];
-#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
-        return output;
-    }
-
-    public uint BytesToUint32(byte[] bytes, int offset)
-    {
-        uint output = 0;
-        output |= (uint) bytes[offset] << 24;
-        output |= (uint) bytes[offset + 1] << 16;
-        output |= (uint) bytes[offset + 2] << 8;
-        output |= bytes[offset + 3];
-        return output;
-    }
-
-    public int BytesToInt32(byte[] bytes, int offset)
-    {
-        int output = 0;
-        output |= bytes[offset] << 24;
-        output |= bytes[offset + 1] << 16;
-        output |= bytes[offset + 2] << 8;
-        output |= bytes[offset + 3];
-        return output;
-    }
-
-    public string BytesToString(byte[] bytes, int offset)
-    {
-        string output = "";
-        for (int i = offset; i < bytes.Length; i++)
-        {
-            byte b = bytes[i];
-            if (b == 0x00) //null
-            {
-                break;
-            }
-            output += Convert.ToChar(b);
-        }
-        return output;
     }
 }
