@@ -30,22 +30,46 @@ public class UdonNetController : UdonSharpBehaviour
     [Header("Maximum retries for packet send")]
     public int waitAckMaxRetries = 5;
 
-    #region protocol_spec
-    //
-    // Protocol
-    //
-    public readonly int ProtocolVersion = 1;
-    public readonly int CompatProtocolVersion = 1;
+    #region Protocol Specification
+    /// <summary>
+    /// The version of the protocol
+    /// </summary>
+    public readonly int ProtocolVersion = 2;
 
-    public readonly byte PacketLossless = 1; //0x01;
-    public readonly byte PacketTargetedPlayer = 2; //0x02;
-    public readonly byte PacketSegmentedPacket = 4; //0x04;
-    public readonly byte PacketDataTypeString = 8; //0x08;
+    /// <summary>
+    /// The least compatible version of the protocol
+    /// </summary>
+    public readonly int CompatProtocolVersion = 2;
 
-    public readonly byte PacketEnquiry = 16; //0x10;
-    public readonly byte PacketAcknowledgement = 32; //0x20;
-    public readonly byte PacketSynchronizeSequenceNumber = 64; //0x40;
-    public readonly byte PacketFinish = 128; //0x80;
+    /// <summary>
+    /// The flag that enables lossless mode
+    /// </summary>
+    public readonly byte FlagLosslessMode = 0x01;
+
+    /// <summary>
+    /// The flag that requests the target end to finish the connection
+    /// </summary>
+    public readonly byte FlagFin = 0x02;
+
+    /// <summary>
+    /// The flag that requests the target end to synchronize sequence numbers
+    /// </summary>
+    public readonly byte FlagSyn = 0x04;
+
+    /// <summary>
+    /// The flag that requests the target end to reset connection
+    /// </summary>
+    public readonly byte FlagRst = 0x08;
+
+    /// <summary>
+    /// The flag that requests the target end to push the buffered data directly instead of waiting other segments to arrive
+    /// </summary>
+    public readonly byte FlagPsh = 0x10;
+
+    /// <summary>
+    /// The flag that tells the target end the acknowledgement sequence ID is included within the header
+    /// </summary>
+    public readonly byte FlagAck = 0x20;
     #endregion
 
     void Start()
@@ -60,6 +84,7 @@ public class UdonNetController : UdonSharpBehaviour
 
     public void Handle(VRCPlayerApi player, object[] udonNetData)
     {
+        /*
         //TODO: UdonSharp does not support custom classes currently, so the data is packed in object[]
         uint eventId = (uint) udonNetData[0];
         byte packetType = (byte) udonNetData[1];
@@ -121,6 +146,7 @@ public class UdonNetController : UdonSharpBehaviour
                 self.SendAck(player.playerId, eventId);
             }
         }
+        */
     }
 
     public NetworkedUNPlayer GetLocalUNPlayer()
@@ -182,11 +208,7 @@ public class UdonNetController : UdonSharpBehaviour
 
     public int CalculateSegmentsCount(byte packetFlags, int bufferLen)
     {
-        int headerLen = 8; //eventId (uint) + packetFlags (byte) + segmentNumber (byte) + segmentLength (ushort)
-        if ((packetFlags & PacketTargetedPlayer) != 0)
-        {
-            headerLen += 4; //targetPlayer (int)
-        }
+        int headerLen = 8; //target player ID (ushort) + sequenceId (ushort) + flags (byte) + window size (byte)
         int availableSize = networkFrameSize - headerLen;
         return (int)Mathf.Ceil(bufferLen / availableSize);
     }
@@ -198,6 +220,8 @@ public class UdonNetController : UdonSharpBehaviour
     /// <returns>Base64 string</returns>
     public string Encode(uint eventId, byte packetFlags, int targetPlayerId, byte[] buffer, int bufferLen, byte segmentIndex)
     {
+        return null;
+        /*
         byte[] arr = new byte[networkFrameSize];
         int offset = 0;
 
@@ -278,6 +302,7 @@ public class UdonNetController : UdonSharpBehaviour
 
 
         return Convert.ToBase64String(arr);
+        */
     }
 
     /// <summary>
@@ -287,6 +312,8 @@ public class UdonNetController : UdonSharpBehaviour
     /// <returns> decoded UdonNetData</returns>
     public object[] Decode(string rawData)
     {
+        return null;
+        /*
         byte[] arr = Convert.FromBase64String(rawData);
 
         object[] udonNetData = new object[4];
@@ -320,6 +347,7 @@ public class UdonNetController : UdonSharpBehaviour
         udonNetData[3] = buffer;
 
         return udonNetData;
+        */
     }
 
     //

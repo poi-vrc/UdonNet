@@ -107,11 +107,14 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool SendRawToPlayerLossless(int targetPlayerId, byte[] buffer, int bufferLen)
     {
-        return SendPacket(udonNetController.PacketLossless, targetPlayerId, buffer, bufferLen, 0);
+        return false;
+        //return SendPacket(udonNetController.PacketLossless, targetPlayerId, buffer, bufferLen, 0);
     }
 
     public bool SendStringToPlayer(int targetPlayerId, string stringData)
     {
+        return false;
+        /*
         byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             udonNetController.PacketDataTypeString,
@@ -119,10 +122,13 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             buffer,
             buffer.Length,
             0);
+        */
     }
     
     public bool SendStringToPlayerLossless(int targetPlayerId, string stringData)
     {
+        return false;
+        /*
         byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             (byte) (udonNetController.PacketLossless | udonNetController.PacketDataTypeString),
@@ -130,6 +136,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             buffer,
             buffer.Length,
             0);
+        */
     }
 
     public bool BroadcastRaw(byte[] buffer, int bufferLen)
@@ -139,11 +146,14 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool BroadcastRawLossless(byte[] buffer, int bufferLen)
     {
-        return SendPacket(udonNetController.PacketLossless, 0, buffer, bufferLen, 0);
+        return false;
+        //return SendPacket(udonNetController.PacketLossless, 0, buffer, bufferLen, 0);
     }
 
     public bool BroadcastString(string stringData)
     {
+        return false;
+        /*
         byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             udonNetController.PacketDataTypeString,
@@ -151,10 +161,13 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             buffer,
             buffer.Length,
             0);
+        */
     }
 
     public bool BroadcastStringLossless(string stringData)
     {
+        return false;
+        /*
         byte[] buffer = udonNetController.StringToBytes(stringData);
         return SendPacket(
             (byte)(udonNetController.PacketLossless | udonNetController.PacketDataTypeString),
@@ -162,10 +175,13 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             buffer,
             buffer.Length,
             0);
+         */
     }
 
     public bool SendAck(int targetPlayerId, uint eventId)
     {
+        return false;
+        /*
         byte[] buffer = udonNetController.Uint32ToBytes(eventId);
         return SendPacket(
             (byte)(
@@ -176,6 +192,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             buffer,
             buffer.Length,
             0);
+        */
     }
 
     void WaitAck(uint eventId, string encoded)
@@ -273,7 +290,7 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
             return false;
         }
 
-        AddPacketToQueue(newEventId, encoded, (packetFlags & udonNetController.PacketLossless) != 0);
+        //AddPacketToQueue(newEventId, encoded, (packetFlags & udonNetController.PacketLossless) != 0);
 
         return true;
     }

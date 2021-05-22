@@ -11,8 +11,6 @@ namespace UdonNet
     /// </summary>
     public class BufferedWriter : UdonSharpBehaviour
     {
-        public NetworkedUNPlayer networkedUNPlayer;
-
         private byte[] buffer = null;
 
         private int offset = -1;
@@ -21,19 +19,69 @@ namespace UdonNet
 
         private int written = 0;
 
+        private bool inUse = false;
+
         void Start()
         {
 
         }
 
-        void Begin(byte[] buffer, int offset, int count)
+        /// <summary>
+        /// Returns whether this byte array is
+        /// </summary>
+        /// <returns></returns>
+        bool isFree()
         {
+            return !inUse;
+        }
+
+        /// <summary>
+        /// Begins this buffered writer with a empty byte array with length "len". Returns false if this writer is not free and has existing operations.
+        /// </summary>
+        /// <param name="len">The length of the array</param>
+        /// <returns>Returns whether this BufferedWriter is free and able for writing</returns>
+        bool BeginEmpty(int len)
+        {
+            if (inUse)
+            {
+                return false;
+            }
+            inUse = true;
+
+            buffer = new byte[len];
+            offset = 0;
+            count = len;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Begins this buffered writer with a provided array with target offset and write count. Returns false if this writer is not free and has existing operations.
+        /// </summary>
+        /// <param name="buffer">Byte array to write</param>
+        /// <param name="offset">Offset</param>
+        /// <param name="count">Byte count to write</param>
+        /// <returns>Returns whether this BufferedWriter is free and able for writing</returns>
+        bool Begin(byte[] buffer, int offset, int count)
+        {
+            if (inUse)
+            {
+                return false;
+            }
+            inUse = true;
+
             this.buffer = buffer;
             this.offset = offset;
             this.count = count;
             written = 0;
+
+            return true;
         }
 
+        /// <summary>
+        /// Write a boolean to the byte array
+        /// </summary>
+        /// <param name="b"></param>
         public void WriteBoolean(bool b)
         {
             buffer[offset++] = b ? byte.MaxValue : byte.MinValue;
@@ -160,6 +208,14 @@ namespace UdonNet
         public void Write()
         {
 
+        }
+
+        public void End()
+        {
+            buffer = null;
+            offset = -1;
+            count = -1;
+            inUse = false;
         }
     }
 }
