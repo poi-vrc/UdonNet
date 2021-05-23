@@ -44,7 +44,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 12
-      Data: 18
+      Data: 16
     - Name: 
       Entry: 7
       Data: 
@@ -599,7 +599,7 @@ MonoBehaviour:
       Data: 13
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -656,7 +656,7 @@ MonoBehaviour:
       Data: 13
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -701,7 +701,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketLossless
+      Data: FlagLosslessMode
     - Name: $v
       Entry: 7
       Data: 42|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -719,7 +719,7 @@ MonoBehaviour:
       Data: 
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -728,10 +728,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketLossless
+      Data: FlagLosslessMode
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketLossless
+      Data: FlagLosslessMode
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -764,7 +764,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketTargetedPlayer
+      Data: FlagFin
     - Name: $v
       Entry: 7
       Data: 46|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -776,7 +776,7 @@ MonoBehaviour:
       Data: 44
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -785,10 +785,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketTargetedPlayer
+      Data: FlagFin
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketTargetedPlayer
+      Data: FlagFin
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -821,7 +821,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketSegmentedPacket
+      Data: FlagSyn
     - Name: $v
       Entry: 7
       Data: 49|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -833,7 +833,7 @@ MonoBehaviour:
       Data: 44
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -842,10 +842,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketSegmentedPacket
+      Data: FlagSyn
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketSegmentedPacket
+      Data: FlagSyn
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -878,7 +878,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketDataTypeString
+      Data: FlagRst
     - Name: $v
       Entry: 7
       Data: 52|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -890,7 +890,7 @@ MonoBehaviour:
       Data: 44
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -899,10 +899,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketDataTypeString
+      Data: FlagRst
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketDataTypeString
+      Data: FlagRst
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -935,7 +935,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketEnquiry
+      Data: FlagPsh
     - Name: $v
       Entry: 7
       Data: 55|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -947,7 +947,7 @@ MonoBehaviour:
       Data: 44
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -956,10 +956,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketEnquiry
+      Data: FlagPsh
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketEnquiry
+      Data: FlagPsh
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -992,7 +992,7 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: PacketAcknowledgement
+      Data: FlagAck
     - Name: $v
       Entry: 7
       Data: 58|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
@@ -1004,7 +1004,7 @@ MonoBehaviour:
       Data: 44
     - Name: declarationType
       Entry: 3
-      Data: 1
+      Data: 257
     - Name: syncMode
       Entry: 3
       Data: 0
@@ -1013,10 +1013,10 @@ MonoBehaviour:
       Data: SystemByte
     - Name: symbolOriginalName
       Entry: 1
-      Data: PacketAcknowledgement
+      Data: FlagAck
     - Name: symbolUniqueName
       Entry: 1
-      Data: PacketAcknowledgement
+      Data: FlagAck
     - Name: symbolDefaultValue
       Entry: 6
       Data: 
@@ -1026,120 +1026,6 @@ MonoBehaviour:
     - Name: fieldAttributes
       Entry: 7
       Data: 60|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: userBehaviourSource
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 
-    - Name: $k
-      Entry: 1
-      Data: PacketSynchronizeSequenceNumber
-    - Name: $v
-      Entry: 7
-      Data: 61|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
-    - Name: fieldSymbol
-      Entry: 7
-      Data: 62|UdonSharp.Compiler.SymbolDefinition, UdonSharp.Editor
-    - Name: internalType
-      Entry: 9
-      Data: 44
-    - Name: declarationType
-      Entry: 3
-      Data: 1
-    - Name: syncMode
-      Entry: 3
-      Data: 0
-    - Name: symbolResolvedTypeName
-      Entry: 1
-      Data: SystemByte
-    - Name: symbolOriginalName
-      Entry: 1
-      Data: PacketSynchronizeSequenceNumber
-    - Name: symbolUniqueName
-      Entry: 1
-      Data: PacketSynchronizeSequenceNumber
-    - Name: symbolDefaultValue
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: fieldAttributes
-      Entry: 7
-      Data: 63|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: userBehaviourSource
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 
-    - Name: $k
-      Entry: 1
-      Data: PacketFinish
-    - Name: $v
-      Entry: 7
-      Data: 64|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
-    - Name: fieldSymbol
-      Entry: 7
-      Data: 65|UdonSharp.Compiler.SymbolDefinition, UdonSharp.Editor
-    - Name: internalType
-      Entry: 9
-      Data: 44
-    - Name: declarationType
-      Entry: 3
-      Data: 1
-    - Name: syncMode
-      Entry: 3
-      Data: 0
-    - Name: symbolResolvedTypeName
-      Entry: 1
-      Data: SystemByte
-    - Name: symbolOriginalName
-      Entry: 1
-      Data: PacketFinish
-    - Name: symbolUniqueName
-      Entry: 1
-      Data: PacketFinish
-    - Name: symbolDefaultValue
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: fieldAttributes
-      Entry: 7
-      Data: 66|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib
     - Name: 
       Entry: 12
       Data: 0
