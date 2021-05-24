@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 4|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: NetworkedUNPlayer[], Assembly-CSharp
+      Data: NetworkedUNPlayer[], UdonNet
     - Name: 
       Entry: 8
       Data: 

@@ -258,8 +258,9 @@ public class NetworkedUNPlayer : UdonSharpBehaviour
 
     public bool SendVersion(int targetPlayerId)
     {
-        byte[] buffer = udonNetController.Int32ToBytes(udonNetController.ProtocolVersion);
-        return SendRawToPlayer(targetPlayerId, buffer, buffer.Length);
+        //byte[] buffer = udonNetController.Int32ToBytes(udonNetController.ProtocolVersion);
+        //return SendRawToPlayer(targetPlayerId, buffer, buffer.Length);
+        return false;
     }
 
     /// <summary>
